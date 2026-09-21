@@ -86,7 +86,7 @@ collections:
                   - { label: 笑 / 笑脸, value: smile }
                   - { label: 歌手 / 麦克风, value: mic }
                   - { label: 钱 / 暴富, value: coin }
-              - { name: swatch, label: 色块（可填多个，用英文逗号分隔，如 #7fb069,#6fa8dc）, widget: string, required: false }
+              - { name: swatch, label: "色块（可填多个，用英文逗号分隔，如 #7fb069,#6fa8dc）", widget: string, required: false }
           - name: contact
             label: 联系方式
             widget: list
