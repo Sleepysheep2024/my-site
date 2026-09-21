@@ -68,9 +68,9 @@ about:
     icon: coin
 contact:
   - label: 邮箱
-    value: hello@example.com
+    value: Sleepysheep2024@163.com
   - label: 微信
-    value: your_wechat_id
+    value: Sleepysheep1222
 ---
 
 这里的内容都可以在后台随时修改。
