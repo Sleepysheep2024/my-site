@@ -1,0 +1,219 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const outings = (await getCollection('life', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+/** 按年 + 月分组，方便一条一条往下看 */
+const groups: Array<{ key: string; label: string; items: typeof outings }> = [];
+for (const outing of outings) {
+  const d = outing.data.date;
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const label = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`;
+  const last = groups[groups.length - 1];
+  if (last && last.key === key) last.items.push(outing);
+  else groups.push({ key, label, items: [outing] });
+}
+
+const day = (d: Date) => String(d.getDate()).padStart(2, '0');
+const weekday = (d: Date) => ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
+---
+
+<BaseLayout title="生活 · 出去玩的日子" active="life">
+  <section class="shell page">
+    <header class="head">
+      <span class="eyebrow" data-reveal>Life</span>
+      <h1 class="display head__title" data-reveal>
+        和朋友<span class="brush">出门</span>的日子
+      </h1>
+      <p class="head__sub" data-reveal>
+        差不多每周都会和人出去玩一次。记的都是些小事：去哪儿、和谁、那天发生了什么。点开任意一条就能看到照片。
+      </p>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="month" data-reveal>
+          <h2 class="month__label">{group.label}</h2>
+          <ul class="blocks">
+            {group.items.map((outing) => (
+              <li>
+                <a class="block" href={`/life/${outing.id}/`}>
+                  <span class="block__date">
+                    <b>{day(outing.data.date)}</b>
+                    <i>{weekday(outing.data.date)}</i>
+                  </span>
+                  <span class="block__place">{outing.data.place || outing.data.title}</span>
+                  <span class="block__title">{outing.data.title}</span>
+                  {outing.data.people.length > 0 && (
+                    <span class="block__people">{outing.data.people.join(' · ')}</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .head {
+    padding: 68px 0 0;
+    max-width: 720px;
+  }
+
+  .head__title {
+    font-size: clamp(36px, 6vw, 62px);
+    margin: 16px 0 0;
+    letter-spacing: 0.03em;
+  }
+
+  .head__sub {
+    font-size: 16.5px;
+    line-height: 2;
+    color: var(--ink-2);
+    margin: 24px 0 0;
+  }
+
+  /* ============ 按月分组 ============ */
+  .month {
+    margin-top: 66px;
+  }
+
+  .month:first-of-type {
+    margin-top: 56px;
+  }
+
+  .month__label {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    color: var(--moss);
+    margin: 0 0 20px;
+  }
+
+  .month__label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--line) 0 6px, transparent 6px 14px);
+    background-size: 14px 1px;
+    background-repeat: repeat-x;
+  }
+
+  /* ============ 小板块 ============ */
+  .blocks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .block {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 18px 18px 20px;
+    border-radius: var(--radius);
+    background: linear-gradient(168deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.5));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 14px 34px -30px rgba(34, 64, 42, 0.5);
+    transition:
+      transform 0.5s var(--ease),
+      border-color 0.5s var(--ease),
+      box-shadow 0.5s var(--ease);
+  }
+
+  .block:hover {
+    transform: translateY(-4px);
+    border-color: #fff;
+    box-shadow:
+      0 22px 44px -32px rgba(34, 64, 42, 0.5),
+      0 0 40px -18px rgba(203, 232, 127, 0.7);
+  }
+
+  .block__date {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-family: var(--font-display);
+    color: var(--mist);
+    letter-spacing: 0.08em;
+  }
+
+  .block__date b {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .block__date i {
+    font-style: normal;
+    font-size: 11px;
+  }
+
+  .block__place {
+    font-family: var(--font-display);
+    font-size: 17px;
+    color: var(--moss-deep);
+    margin-top: 10px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .block__title {
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--ink-2);
+    margin-top: 7px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .block__people {
+    margin-top: auto;
+    padding-top: 12px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 1080px) {
+    .blocks {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 820px) {
+    .blocks {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .head {
+      padding-top: 40px;
+    }
+
+    .month {
+      margin-top: 48px;
+    }
+
+    .blocks {
+      gap: 12px;
+    }
+  }
+</style>

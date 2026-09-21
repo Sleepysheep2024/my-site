@@ -1,0 +1,965 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const profile = await getEntry('profile', 'me');
+if (!profile) throw new Error('缺少 src/content/profile/me.md');
+const { data } = profile;
+
+const cities = (await getCollection('travel', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const books = await getCollection('reading', ({ data }) => !data.draft);
+
+/** 板块入口的图标 */
+const entryIcons: Record<string, string> = {
+  mountain:
+    '<path d="M3 19h18"/><path d="M4.5 19 9 10.5l3.6 4.6L15.6 9 20 19"/><circle cx="17.5" cy="5.5" r="2.2"/>',
+  pin: '<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5V5.5"/><path d="M11 3v15"/>',
+  star: '<path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 10l6.1-.9Z"/>',
+};
+
+/** 没有配人生照片时，退回到头像 */
+const photos =
+  data.photos.length > 0
+    ? data.photos
+    : [{ image: data.avatar, caption: data.tagline, place: '' }];
+
+/** 「关于我」的图标 */
+const icons: Record<string, string> = {
+  food: '<path d="M4 11h16a8 8 0 0 1-16 0Z"/><path d="M12 3.2v4.6"/><path d="M8.6 4.8v3"/><path d="M15.4 4.8v3"/>',
+  fruit:
+    '<path d="M12 7.4c-3.2 0-5.6 2.5-5.6 6 0 3.6 2.5 7.3 5.6 7.3s5.6-3.7 5.6-7.3c0-3.5-2.4-6-5.6-6Z"/><path d="M12 7.4c0-2 1.3-3.6 3.2-4.2"/><path d="M12 7.4c-.5-1.7-1.8-2.7-3.3-2.9"/>',
+  color:
+    '<path d="M12 3.2a8.8 8.8 0 1 0 0 17.6c1.3 0 2.1-.9 2.1-2 0-.6-.3-1-.7-1.4-.4-.4-.6-.9-.6-1.5 0-1 .9-1.9 2-1.9h1.3a5.1 5.1 0 0 0 5.1-5.1c0-3.9-4.1-5.7-9.2-5.7Z"/><circle cx="7.8" cy="11.4" r="1"/><circle cx="10.2" cy="7.6" r="1"/><circle cx="14.8" cy="8.2" r="1"/>',
+  goal: '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1"/>',
+  drink:
+    '<path d="M6 4h12l-1.4 15.3a2 2 0 0 1-2 1.7H9.4a2 2 0 0 1-2-1.7Z"/><path d="M6.7 10.4h10.6"/>',
+  season:
+    '<circle cx="12" cy="12" r="4.2"/><path d="M12 3.2v2.2M12 18.6v2.2M3.2 12h2.2M18.6 12h2.2M5.8 5.8l1.6 1.6M16.6 16.6l1.6 1.6M18.2 5.8l-1.6 1.6M7.4 16.6l-1.6 1.6"/>',
+  music:
+    '<path d="M9.4 17.8V6.4l9.2-1.9v11.2"/><circle cx="7.2" cy="17.8" r="2.2"/><circle cx="16.4" cy="15.7" r="2.2"/>',
+  place: '<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+  flower:
+    '<path d="M5.4 19.2c-.6-8.4 4.8-13.4 13.4-14.4.8 8.8-4.6 14-13.4 14.4Z"/><path d="M5.4 19.2c3-4.2 6.2-6.6 10.4-8.4"/>',
+  star: '<path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 10l6.1-.9Z"/>',
+  user: '<circle cx="12" cy="8.4" r="3.7"/><path d="M4.8 20.4a7.2 7.2 0 0 1 14.4 0"/>',
+  cake: '<path d="M4 20.4h16"/><path d="M5.6 20.4v-5a2 2 0 0 1 2-2h8.8a2 2 0 0 1 2 2v5"/><path d="M5.6 16.6c1.4 1.4 2.8 1.4 4.2 0s2.8-1.4 4.2 0 2.8 1.4 4.2 0"/><path d="M12 13.4V9.8"/><circle cx="12" cy="7.6" r="1.2"/>',
+  ruler:
+    '<path d="M4.4 14.6 14.6 4.4l5 5-10.2 10.2Z"/><path d="M7.6 11.4l1.9 1.9M10.5 8.5l1.9 1.9M13.4 5.6l1.9 1.9"/>',
+  heart: '<path d="M12 20.2s-7.5-4.7-7.5-9.7a4.3 4.3 0 0 1 7.5-2.8 4.3 4.3 0 0 1 7.5 2.8c0 5-7.5 9.7-7.5 9.7Z"/>',
+  cloud: '<path d="M7.6 18.6h9.2a3.9 3.9 0 0 0 .4-7.8 5.4 5.4 0 0 0-10.4 1 3.5 3.5 0 0 0 .8 6.8Z"/>',
+  lock: '<rect x="4.8" y="10.4" width="14.4" height="9.8" rx="2.4"/><path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6"/><path d="M12 14.4v2.2"/>',
+  friends:
+    '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.8a5.6 5.6 0 0 1 11.2 0"/><path d="M16.2 6.4a3.2 3.2 0 0 1 0 6.2"/><path d="M17.6 15a5.6 5.6 0 0 1 3 4.8"/>',
+  gift: '<rect x="3.8" y="9.4" width="16.4" height="10.6" rx="1.8"/><path d="M3.8 13.6h16.4"/><path d="M12 9.4v10.6"/><path d="M12 9.4C10.6 5.6 8.6 4.4 7.4 5.2s-.6 2.8 4.6 4.2Z"/><path d="M12 9.4c1.4-3.8 3.4-5 4.6-4.2s.6 2.8-4.6 4.2Z"/>',
+  tear: '<path d="M12 3.6s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/><path d="M9.4 14.8a2.6 2.6 0 0 0 2.6 2.6"/>',
+  smile:
+    '<circle cx="12" cy="12" r="8.4"/><path d="M8.4 14.2a4.4 4.4 0 0 0 7.2 0"/><path d="M9.3 9.6h.01M14.7 9.6h.01"/>',
+  mic: '<rect x="9.2" y="3.4" width="5.6" height="10.4" rx="2.8"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0"/><path d="M12 17.8v2.8"/>',
+  coin: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.2v9.6"/><path d="M14.7 9.5A2.9 2.9 0 0 0 12.2 8c-1.6 0-2.7.9-2.7 2.1s1 1.8 2.7 2 2.7 1 2.7 2.1-1.1 2.1-2.7 2.1a2.9 2.9 0 0 1-2.5-1.4"/>',
+};
+
+const sections = [
+  {
+    key: 'travel',
+    title: '旅行',
+    href: '/travel/',
+    meta: `${cities.length} 座城市`,
+    desc: '走过的城市，和一些忘不掉的瞬间。',
+    icon: 'mountain',
+  },
+  {
+    key: 'life',
+    title: '生活',
+    href: '/life/',
+    meta: '每周都在出门',
+    desc: '和朋友出去玩的日子，还有一些值得记住的日常。',
+    icon: 'pin',
+  },
+  {
+    key: 'career',
+    title: '生涯',
+    href: '/career/',
+    meta: '实习 · 班干 · 团委学习 · 比赛',
+    desc: '一些努力过、也值得被记住的时刻。',
+    icon: 'star',
+  },
+  {
+    key: 'reading',
+    title: '阅读',
+    href: '/reading/',
+    meta: `${books.length} 本书`,
+    desc: '读过的好书，抄下的好句，和当时的批注。',
+    icon: 'book',
+  },
+];
+---
+
+<BaseLayout title={`${data.name} · 记录本`} active="home">
+  <!-- ================= Hero：人生照片 + 自我介绍 ================= -->
+  <section class="hero">
+    <div class="shell hero__grid">
+      <!-- —— 照片轮播（纯展示） —— -->
+      <div class="album" data-album data-reveal>
+        <div class="album__stage">
+          <span class="album__ring" aria-hidden="true"></span>
+          <span class="album__wash" aria-hidden="true"></span>
+          <span class="album__wash album__wash--2" aria-hidden="true"></span>
+          <span class="album__deck album__deck--a" aria-hidden="true"></span>
+          <span class="album__deck album__deck--b" aria-hidden="true"></span>
+
+          <div class="album__frames">
+            {
+              photos.map((photo, i) => (
+                <figure class:list={['album__frame', { 'is-active': i === 0 }]} data-frame>
+                  <img
+                    src={photo.image}
+                    alt={`${data.name}的人生照片 ${i + 1}`}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                </figure>
+              ))
+            }
+          </div>
+
+          <span class="album__glow" aria-hidden="true"></span>
+          <span class="album__spark album__spark--a" aria-hidden="true">✦</span>
+          <span class="album__spark album__spark--b" aria-hidden="true">✦</span>
+        </div>
+
+        <div class="album__bar">
+          <span class="album__count">
+            <b data-index>01</b><i>/</i>{String(photos.length).padStart(2, '0')}
+          </span>
+
+          {
+            photos.length > 1 && (
+              <div class="album__nav">
+                <button class="album__arrow" type="button" data-prev aria-label="上一张">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 5.5 8 12l6.5 6.5" />
+                  </svg>
+                </button>
+                <button class="album__arrow" type="button" data-next aria-label="下一张">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.5 5.5 16 12l-6.5 6.5" />
+                  </svg>
+                </button>
+              </div>
+            )
+          }
+        </div>
+
+        {
+          photos.length > 1 && (
+            <ul class="album__dots">
+              {photos.map((_, i) => (
+                <li>
+                  <button
+                    class="album__dot"
+                    type="button"
+                    data-dot
+                    aria-label={`第 ${i + 1} 张`}
+                    aria-current={i === 0 ? 'true' : 'false'}
+                  />
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      <!-- —— 自我介绍 —— -->
+      <div class="hero__text">
+        <span class="eyebrow" data-reveal>Hello, 我是</span>
+        <h1 class="display hero__name" data-reveal>{data.name}</h1>
+        <p class="hero__tagline" data-reveal>{data.tagline}</p>
+        <p class="prose hero__intro" data-reveal>{data.intro}</p>
+
+        <a class="hero__resume" href="/resume/" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3.6v11.2" />
+            <path d="M7.6 10.6 12 15l4.4-4.4" />
+            <path d="M4.4 18.6h15.2" />
+          </svg>
+          个人使用说明
+        </a>
+
+        {
+          data.tags.length > 0 && (
+            <ul class="hero__tags" data-reveal>
+              {data.tags.map((tag) => (
+                <li class="tag">{tag}</li>
+              ))}
+            </ul>
+          )
+        }
+
+        {
+          data.contact.length > 0 && (
+            <ul class="hero__contact" data-reveal>
+              {data.contact.map((item) => (
+                <li class="hero__contactItem">
+                  <span class="hero__contactLabel">{item.label}</span>
+                  <span class="hero__contactValue">{item.value}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 关于我 ================= -->
+  {
+    data.about.length > 0 && (
+      <section class="shell page" style="padding-top: 100px;">
+        <div class="section-head">
+          <div data-reveal>
+            <span class="eyebrow">About me</span>
+            <h2 class="section-title">
+              关于我，一些<span class="brush">不太正经</span>的答案
+            </h2>
+          </div>
+          <p class="section-note" data-reveal>认真回答的话，大概就是这样。</p>
+        </div>
+
+        <ul class="about">
+          {data.about.map((item, i) => (
+            <li class="about__card" data-reveal style={`transition-delay:${Math.min(i, 8) * 55}ms`}>
+              <span class="about__icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  set:html={icons[item.icon] ?? icons.star}
+                />
+              </span>
+              <span class="about__body">
+                <span class="about__label">{item.label}</span>
+                <span class="about__value">
+                  {item.swatch
+                    .split(',')
+                    .map((c) => c.trim())
+                    .filter(Boolean)
+                    .map((c) => (
+                      <i class="about__swatch" style={`background:${c}`} aria-hidden="true" />
+                    ))}
+                  {item.value}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <!-- ================= 板块入口 ================= -->
+  <section class="shell page" style="padding-top: 100px;">
+    <div class="section-head">
+      <div data-reveal>
+        <span class="eyebrow">Sections</span>
+        <h2 class="section-title">我都在记录些什么</h2>
+      </div>
+      <p class="section-note" data-reveal>吃喝玩乐，和一点点认真生活。</p>
+    </div>
+
+    <div class="entries">
+      {
+        sections.map((section, i) => (
+          <a class="entry card" href={section.href} data-reveal style={`transition-delay:${i * 90}ms`}>
+            <span class="entry__icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                set:html={entryIcons[section.icon] ?? entryIcons.star}
+              />
+            </span>
+            <h3 class="entry__title">{section.title}</h3>
+            <p class="entry__desc">{section.desc}</p>
+            <span class="entry__meta entry__meta--go">{section.meta} · 走进去 →</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-album]').forEach((album) => {
+    const frames = Array.from(album.querySelectorAll<HTMLElement>('[data-frame]'));
+    const dots = Array.from(album.querySelectorAll<HTMLButtonElement>('[data-dot]'));
+    const indexEl = album.querySelector<HTMLElement>('[data-index]');
+    const total = frames.length;
+    if (total < 2) return;
+
+    let current = 0;
+    let timer: number | undefined;
+
+    const show = (next: number) => {
+      current = (next + total) % total;
+      frames.forEach((frame, i) => frame.classList.toggle('is-active', i === current));
+      dots.forEach((dot, i) =>
+        dot.setAttribute('aria-current', i === current ? 'true' : 'false'),
+      );
+      if (indexEl) indexEl.textContent = String(current + 1).padStart(2, '0');
+    };
+
+    const stop = () => {
+      if (timer !== undefined) window.clearInterval(timer);
+      timer = undefined;
+    };
+
+    const start = () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      stop();
+      timer = window.setInterval(() => show(current + 1), 5600);
+    };
+
+    album.querySelector('[data-prev]')?.addEventListener('click', () => {
+      show(current - 1);
+      start();
+    });
+    album.querySelector('[data-next]')?.addEventListener('click', () => {
+      show(current + 1);
+      start();
+    });
+    dots.forEach((dot, i) =>
+      dot.addEventListener('click', () => {
+        show(i);
+        start();
+      }),
+    );
+
+    album.addEventListener('mouseenter', stop);
+    album.addEventListener('mouseleave', start);
+    album.addEventListener('focusin', stop);
+    album.addEventListener('focusout', start);
+
+    show(0);
+    start();
+  });
+</script>
+
+<style>
+  /* ================= Hero ================= */
+  .hero {
+    padding: 60px 0 24px;
+  }
+
+  .hero__grid {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 56px;
+    align-items: center;
+  }
+
+  /* ================= 人生照片轮播 ================= */
+  .album {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .album__stage {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    isolation: isolate;
+  }
+
+  /* 背后缓慢转动的虚线圈，让留白有呼吸感 */
+  .album__ring {
+    position: absolute;
+    inset: -15% -13%;
+    z-index: -4;
+    border-radius: 48% 52% 46% 54% / 52% 46% 54% 48%;
+    border: 1.5px dashed rgba(109, 154, 94, 0.32);
+    animation: ring-spin 64s linear infinite;
+  }
+
+  @keyframes ring-spin {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+
+  /* 背后旋转的油画光晕（极光感） */
+  .album__wash {
+    position: absolute;
+    inset: -9% -7%;
+    z-index: -3;
+    border-radius: 50% 46% 52% 48% / 48% 52% 46% 54%;
+    background: conic-gradient(
+      from 150deg,
+      var(--leaf-glow),
+      var(--lake),
+      var(--sprout),
+      var(--lavender),
+      var(--sky),
+      var(--leaf-glow)
+    );
+    filter: blur(34px);
+    opacity: 0.62;
+    animation: wash-spin 30s linear infinite;
+  }
+
+  .album__wash--2 {
+    inset: -4% -12% -12% -2%;
+    background: conic-gradient(
+      from 20deg,
+      var(--sunbeam),
+      var(--leaf-bright),
+      var(--mist),
+      var(--leaf-glow),
+      var(--sunbeam)
+    );
+    filter: blur(26px);
+    opacity: 0.5;
+    animation: wash-spin 44s linear infinite reverse;
+  }
+
+  @keyframes wash-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* 背后叠着的两张「照片」 */
+  .album__deck {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 24px 20px 26px 18px;
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.66));
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 22px 46px -34px rgba(34, 64, 42, 0.55);
+  }
+
+  .album__deck--a {
+    transform: rotate(-5.5deg) translate(-14px, 9px) scale(0.965);
+  }
+
+  .album__deck--b {
+    transform: rotate(4.5deg) translate(12px, 16px) scale(0.925);
+  }
+
+  .album__frames {
+    position: absolute;
+    inset: 0;
+  }
+
+  .album__frame {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border-radius: 22px 18px 24px 16px;
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(1.07);
+    filter: blur(12px) saturate(1.12);
+    transition:
+      opacity 1.15s var(--ease),
+      transform 1.5s var(--ease),
+      filter 1.15s var(--ease);
+    will-change: opacity, transform;
+  }
+
+  .album__frame.is-active {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1);
+  }
+
+  .album__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 统一照片的绿调与柔光 */
+  .album__frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 253, 235, 0.26) 0%,
+        transparent 26%,
+        transparent 66%,
+        rgba(34, 64, 42, 0.32) 100%
+      ),
+      radial-gradient(84% 62% at 50% 8%, rgba(232, 246, 171, 0.34), transparent 72%),
+      radial-gradient(70% 60% at 100% 100%, rgba(143, 216, 196, 0.22), transparent 70%);
+  }
+
+  /* 照片边缘的柔光 */
+  .album__glow {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 22px 18px 24px 16px;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+      0 0 70px -12px rgba(203, 232, 127, 0.7);
+  }
+
+  .album__spark {
+    position: absolute;
+    z-index: 4;
+    font-size: 18px;
+    color: #fff;
+    text-shadow: 0 0 16px rgba(203, 232, 127, 0.95);
+    animation: twinkle 5.2s ease-in-out infinite;
+  }
+
+  .album__spark--a {
+    top: -13px;
+    right: 2px;
+  }
+
+  .album__spark--b {
+    bottom: 14px;
+    left: -16px;
+    font-size: 13px;
+    animation-delay: -2.4s;
+  }
+
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scale(0.86) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15) rotate(20deg);
+    }
+  }
+
+  /* —— 计数 + 切换 —— */
+  .album__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .album__count {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .album__count b {
+    font-weight: 600;
+    color: var(--moss-deep);
+  }
+
+  .album__count i {
+    font-style: normal;
+    margin: 0 3px;
+    opacity: 0.5;
+  }
+
+  .album__nav {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .album__arrow {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--moss-deep);
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 22px -16px rgba(34, 64, 42, 0.6);
+    transition:
+      transform 0.35s var(--ease),
+      background 0.35s var(--ease),
+      box-shadow 0.35s var(--ease);
+  }
+
+  .album__arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .album__arrow:hover {
+    transform: scale(1.1);
+    background: #fff;
+    box-shadow: 0 12px 28px -14px rgba(34, 64, 42, 0.5);
+  }
+
+  .album__dots {
+    display: flex;
+    gap: 7px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .album__dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    background: var(--mist);
+    transition:
+      width 0.45s var(--ease),
+      background 0.45s var(--ease);
+  }
+
+  .album__dot[aria-current="true"] {
+    width: 22px;
+    background: linear-gradient(90deg, var(--leaf-bright), var(--lake));
+  }
+
+  /* ================= 自我介绍 ================= */
+  .hero__name {
+    font-size: clamp(42px, 6vw, 68px);
+    margin: 14px 0 0;
+    letter-spacing: 0.04em;
+  }
+
+  .hero__tagline {
+    font-family: var(--font-display);
+    font-size: clamp(17px, 2.2vw, 21px);
+    color: var(--moss);
+    margin: 16px 0 0;
+    letter-spacing: 0.03em;
+  }
+
+  .hero__intro {
+    margin: 26px 0 0;
+    max-width: 44ch;
+  }
+
+  .hero__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 30px 0 0;
+  }
+
+  /* —— 下载简历按钮 —— */
+  .hero__resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
+    padding: 12px 26px 12px 22px;
+    border-radius: 999px;
+    font-size: 14.5px;
+    letter-spacing: 0.06em;
+    color: var(--moss-deep);
+    background: linear-gradient(120deg, rgba(203, 232, 127, 0.95), rgba(143, 216, 196, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 16px 32px -22px rgba(34, 64, 42, 0.6);
+    transition:
+      transform 0.45s var(--ease),
+      box-shadow 0.45s var(--ease);
+  }
+
+  .hero__resume svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .hero__resume:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 22px 40px -22px rgba(34, 64, 42, 0.55),
+      0 0 46px -16px rgba(203, 232, 127, 0.9);
+  }
+
+  .hero__contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    list-style: none;
+    padding: 26px 0 0;
+    margin: 30px 0 0;
+    border-top: 1px dashed var(--line);
+  }
+
+  .hero__contactItem {
+    display: grid;
+    gap: 2px;
+  }
+
+  .hero__contactLabel {
+    font-size: 11.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .hero__contactValue {
+    font-size: 14.5px;
+    color: var(--moss-deep);
+  }
+
+  /* ================= 关于我 ================= */
+  .section-note {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: var(--moss);
+    margin: 0;
+    padding-bottom: 6px;
+  }
+
+  .about {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 13px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .about__card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 13px;
+    padding: 14px 17px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.56));
+    backdrop-filter: blur(10px) saturate(1.12);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 14px 34px -30px rgba(34, 64, 42, 0.5);
+    transition:
+      transform 0.45s var(--ease),
+      box-shadow 0.45s var(--ease);
+  }
+
+  .about__card::before {
+    content: "";
+    position: absolute;
+    top: -60%;
+    right: -14%;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232, 246, 171, 0.95), transparent 68%);
+    opacity: 0;
+    transition: opacity 0.5s var(--ease);
+    pointer-events: none;
+  }
+
+  .about__card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 22px 44px -30px rgba(34, 64, 42, 0.46),
+      0 0 44px -20px rgba(203, 232, 127, 0.66);
+  }
+
+  .about__card:hover::before {
+    opacity: 1;
+  }
+
+  .about__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50% 46% 52% 48% / 48% 52% 46% 54%;
+    background: linear-gradient(140deg, rgba(203, 232, 127, 0.92), rgba(143, 216, 196, 0.68));
+    color: var(--moss-deep);
+  }
+
+  .about__icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .about__body {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .about__label {
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    line-height: 1.5;
+    color: var(--ink-3);
+  }
+
+  .about__value {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-family: var(--font-display);
+    font-size: 17.5px;
+    line-height: 1.45;
+    color: var(--moss-deep);
+    letter-spacing: 0.02em;
+  }
+
+  .about__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+      0 2px 8px -2px rgba(34, 64, 42, 0.45);
+  }
+
+  /* ================= 板块入口 ================= */
+  .entries {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+  }
+
+  .entry {
+    position: relative;
+    padding: 38px 34px 34px;
+    display: flex;
+    flex-direction: column;
+    min-height: 230px;
+  }
+
+  .entry__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50% 46% 52% 48% / 48% 52% 46% 54%;
+    background: linear-gradient(140deg, rgba(203, 232, 127, 0.9), rgba(143, 216, 196, 0.66));
+    color: var(--moss-deep);
+    margin-bottom: 22px;
+  }
+
+  .entry__icon svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .entry__title {
+    font-family: var(--font-display);
+    font-size: 25px;
+    font-weight: 400;
+    color: var(--moss-deep);
+    margin: 0;
+    letter-spacing: 0.04em;
+  }
+
+  .entry__desc {
+    font-size: 14.5px;
+    color: var(--ink-2);
+    margin: 12px 0 0;
+    line-height: 1.85;
+  }
+
+  .entry__meta {
+    margin-top: auto;
+    padding-top: 22px;
+    font-size: 12.5px;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+  }
+
+  .entry__meta--go {
+    color: var(--moss);
+  }
+
+  .entry.card:hover .entry__meta--go {
+    color: var(--moss-deep);
+  }
+
+  /* ================= 响应式 ================= */
+  @media (prefers-reduced-motion: reduce) {
+    .album__ring,
+    .album__wash,
+    .album__spark {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 46px;
+    }
+
+    .album {
+      width: 100%;
+      max-width: 250px;
+      margin: 0 auto;
+    }
+
+    .hero__text {
+      text-align: center;
+    }
+
+    .hero__intro {
+      margin-inline: auto;
+    }
+
+    .hero__tags,
+    .hero__contact {
+      justify-content: center;
+    }
+
+    .about {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .entries,
+    .about {
+      grid-template-columns: 1fr;
+    }
+
+    .entry {
+      min-height: 0;
+      padding: 30px 26px 28px;
+    }
+
+    .hero {
+      padding: 36px 0 12px;
+    }
+  }
+</style>

@@ -1,0 +1,209 @@
+---
+import 'leaflet/dist/leaflet.css';
+
+interface Point {
+  lat: number;
+  lng: number;
+  title: string;
+  place?: string;
+}
+
+interface Props {
+  points: Point[];
+  zoom?: number;
+  height?: string;
+}
+
+const { points, zoom = 9, height = '420px' } = Astro.props;
+const valid = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+---
+
+{
+  valid.length > 0 && (
+    <div class="lifemap" data-lifemap data-zoom={zoom} style={`--map-h:${height}`}>
+      <div class="lifemap__canvas" data-map-canvas />
+      <script type="application/json" data-map-points set:html={JSON.stringify(valid)} />
+    </div>
+  )
+}
+
+<style is:global>
+  .lifemap {
+    position: relative;
+    z-index: 1;
+    height: var(--map-h);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--cream-2);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 22px 52px -40px rgba(34, 64, 42, 0.55);
+  }
+
+  .lifemap__canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 高德瓦片是浅色的，压一层绿调让它融进整站 */
+  .lifemap .leaflet-tile-pane {
+    filter: saturate(0.72) hue-rotate(6deg) brightness(1.03);
+  }
+
+  .lifemap .leaflet-container {
+    background: var(--cream-2);
+    font-family: var(--font-body);
+  }
+
+  .lifemap .leaflet-control-attribution {
+    background: rgba(251, 249, 243, 0.82);
+    font-size: 10px;
+    color: var(--ink-3);
+  }
+
+  .lifemap .leaflet-control-attribution a {
+    color: var(--moss);
+  }
+
+  .lifemap .leaflet-bar a {
+    color: var(--moss-deep);
+    background: rgba(251, 249, 243, 0.94);
+    border-bottom-color: var(--line);
+  }
+
+  .lifemap .leaflet-bar a:hover {
+    background: #fff;
+    color: var(--moss);
+  }
+
+  /* 自定义绿色圆点标记（不用默认图标，避免打包丢图） */
+  .lifemap .mapdot {
+    background: none;
+    border: none;
+  }
+
+  .lifemap .mapdot__core {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: var(--leaf-bright);
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px rgba(185, 228, 85, 0.9);
+  }
+
+  .lifemap .mapdot__pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(185, 228, 85, 0.5);
+    animation: mapdot-pulse 2.4s var(--ease) infinite;
+  }
+
+  @keyframes mapdot-pulse {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.85;
+    }
+    70% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+
+  .lifemap .leaflet-popup-content-wrapper {
+    border-radius: 14px;
+    background: rgba(251, 249, 243, 0.96);
+    box-shadow: 0 14px 32px -18px rgba(34, 64, 42, 0.6);
+  }
+
+  .lifemap .leaflet-popup-content {
+    margin: 12px 16px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--moss-deep);
+  }
+
+  .lifemap .leaflet-popup-content b {
+    display: block;
+    font-weight: 400;
+  }
+
+  .lifemap .leaflet-popup-content span {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    margin-top: 4px;
+  }
+
+  .lifemap .leaflet-popup-tip {
+    background: rgba(251, 249, 243, 0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lifemap .mapdot__pulse {
+      animation: none;
+      opacity: 0.4;
+      transform: scale(1.4);
+    }
+  }
+</style>
+
+<script>
+  import L from 'leaflet';
+
+  document.querySelectorAll<HTMLElement>('[data-lifemap]').forEach((host) => {
+    const canvas = host.querySelector<HTMLElement>('[data-map-canvas]');
+    const raw = host.querySelector<HTMLScriptElement>('[data-map-points]');
+    if (!canvas || !raw) return;
+
+    const points: Array<{ lat: number; lng: number; title: string; place?: string }> = JSON.parse(
+      raw.textContent || '[]',
+    );
+    if (points.length === 0) return;
+
+    const map = L.map(canvas, {
+      scrollWheelZoom: false,
+      zoomControl: points.length > 1,
+    });
+
+    L.tileLayer(
+      'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+      {
+        subdomains: ['1', '2', '3', '4'],
+        maxZoom: 18,
+        attribution: '© 高德地图',
+      },
+    ).addTo(map);
+
+    const icon = L.divIcon({
+      className: 'mapdot',
+      html: '<span class="mapdot__pulse"></span><span class="mapdot__core"></span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -10],
+    });
+
+    const bounds = L.latLngBounds([]);
+
+    points.forEach((point) => {
+      const marker = L.marker([point.lat, point.lng], { icon, title: point.title }).addTo(map);
+      marker.bindPopup(
+        `<b>${point.title}</b>${point.place ? `<span>${point.place}</span>` : ''}`,
+        { closeButton: false },
+      );
+      bounds.extend([point.lat, point.lng]);
+    });
+
+    if (points.length > 1) {
+      map.fitBounds(bounds, { padding: [56, 56], maxZoom: 12 });
+    } else {
+      map.setView([points[0].lat, points[0].lng], Number(host.dataset.zoom ?? 11));
+    }
+  });
+</script>

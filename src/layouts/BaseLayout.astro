@@ -1,0 +1,132 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  active?: string;
+}
+
+const {
+  title,
+  description = '一个人的吃喝玩乐记录：旅行、生活、生涯，还有阅读时抄下的好句。',
+  active = '',
+} = Astro.props;
+
+const nav = [
+  { label: '首页', href: '/', key: 'home' },
+  { label: '旅行', href: '/travel/', key: 'travel' },
+  { label: '生活', href: '/life/', key: 'life' },
+  { label: '生涯', href: '/career/', key: 'career' },
+  { label: '阅读', href: '/reading/', key: 'reading' },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <!-- 水彩光斑背景 -->
+    <div class="wc-bg" aria-hidden="true">
+      <span class="wc-blob wc-blob--a"></span>
+      <span class="wc-blob wc-blob--b"></span>
+      <span class="wc-blob wc-blob--c"></span>
+      <span class="wc-blob wc-blob--d"></span>
+    </div>
+
+    <!-- 大气层：叶隙透光 / 柔光晕 / 斜射光柱 / 漂浮光点 -->
+    <div class="atmo" aria-hidden="true">
+      <span class="atmo__dapple"></span>
+      <span class="atmo__haze"></span>
+      <span class="atmo__rays"></span>
+      <span class="atmo__bokeh" data-bokeh></span>
+    </div>
+
+    <header class="nav">
+      <div class="shell nav__inner">
+        <a class="nav__brand" href="/">杨梦婷の记录本</a>
+        <nav class="nav__links" aria-label="主导航">
+          {
+            nav.map((item) => (
+              <a
+                class="nav__link"
+                href={item.href}
+                aria-current={active === item.key ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer__inner">
+        <span class="footer__sign">愿你我都能去想去的地方。</span>
+        <span>© {new Date().getFullYear()} · 用文字和照片存下的日子</span>
+      </div>
+    </footer>
+
+    <script>
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            }
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+      );
+
+      document.querySelectorAll('[data-reveal]').forEach((el) => observer.observe(el));
+
+      // 生成漂浮光点（叶隙里透下来的彩色小光斑）
+      const bokehHost = document.querySelector<HTMLElement>('[data-bokeh]');
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (bokehHost && !calm) {
+        const palette: Array<[number, number, number, number]> = [
+          [255, 255, 255, 0.95],
+          [232, 246, 171, 0.92],
+          [185, 228, 85, 0.85],
+          [134, 217, 234, 0.8],
+          [185, 166, 227, 0.78],
+          [247, 233, 176, 0.9],
+          [242, 198, 214, 0.72],
+        ];
+        const count = window.innerWidth < 720 ? 24 : 46;
+
+        for (let i = 0; i < count; i++) {
+          const [r, g, b, a] = palette[Math.floor(Math.random() * palette.length)];
+          const size = 2 + Math.random() * 6;
+          const dot = document.createElement('span');
+          dot.className = 'bokeh-dot';
+          dot.style.left = `${Math.random() * 100}%`;
+          dot.style.top = `${Math.random() * 100}%`;
+          dot.style.width = `${size}px`;
+          dot.style.height = `${size}px`;
+          dot.style.background = `rgba(${r},${g},${b},${a})`;
+          dot.style.boxShadow = `0 0 ${size * 2.6}px rgba(${r},${g},${b},${a * 0.85})`;
+          dot.style.animationDuration = `${16 + Math.random() * 20}s`;
+          dot.style.animationDelay = `${-Math.random() * 24}s`;
+          dot.style.setProperty('--peak', `${0.3 + Math.random() * 0.6}`);
+          dot.style.setProperty('--dx', `${Math.random() * 44 - 22}px`);
+          bokehHost.appendChild(dot);
+        }
+      }
+    </script>
+  </body>
+</html>

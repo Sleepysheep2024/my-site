@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="leaf" cx="34%" cy="28%" r="78%">
+      <stop offset="0%" stop-color="#C9E4A8" />
+      <stop offset="55%" stop-color="#8FC7B8" />
+      <stop offset="100%" stop-color="#6B8F71" />
+    </radialGradient>
+  </defs>
+  <path
+    d="M32 3C19 11 7 22 7 36.5a25 25 0 0 0 50 0C57 22 45 11 32 3Z"
+    fill="url(#leaf)"
+  />
+  <path
+    d="M32 16v34M32 27c-6 0-10-3-11-7M32 38c6 0 10-3 11-7"
+    fill="none"
+    stroke="#2F4F3A"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    opacity="0.45"
+  />
+</svg>

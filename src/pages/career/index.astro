@@ -1,0 +1,268 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const works = (await getCollection('career', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+/** 固定分组顺序，其余类别按出现顺序接在后面 */
+const preferred = ['实习', '班干', '团委学习', '比赛'];
+const present = [...new Set(works.map((w) => w.data.category))];
+const order = [
+  ...preferred.filter((c) => present.includes(c)),
+  ...present.filter((c) => !preferred.includes(c)),
+];
+
+const groups = order.map((category) => ({
+  category,
+  items: works.filter((w) => w.data.category === category),
+}));
+
+const fmt = (d: Date) =>
+  `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+---
+
+<BaseLayout title="生涯 · 做过的事" active="career">
+  <section class="shell page">
+    <header class="head">
+      <span class="eyebrow" data-reveal>Career</span>
+      <h1 class="display head__title" data-reveal>
+        我做过的一些<span class="brush">事</span>
+      </h1>
+      <p class="head__sub" data-reveal>
+        实习、班干、团委学习、比赛……不算是履历，就是一些当时很用力、事后想起来还挺骄傲的事。每件事下面都写了当时真实的想法——好的坏的都写。
+      </p>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="group" data-reveal>
+          <h2 class="group__label">{group.category}</h2>
+
+          <div class="cards">
+            {group.items.map((work) => (
+              <article class="work">
+                <div class="work__top">
+                  <span class="work__date">{fmt(work.data.date)}</span>
+                  {work.data.org && <span class="work__org">{work.data.org}</span>}
+                </div>
+
+                <h3 class="work__title">{work.data.title}</h3>
+                {work.data.summary && <p class="work__summary">{work.data.summary}</p>}
+
+                {work.data.thought && (
+                  <div class="work__thought">
+                    <span class="work__thoughtLabel">当时的想法</span>
+                    <p class="work__thoughtText">{work.data.thought}</p>
+                  </div>
+                )}
+
+                {work.data.tags.length > 0 && (
+                  <ul class="work__tags">
+                    {work.data.tags.map((tag) => (
+                      <li class="tag tag--plain">{tag}</li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .head {
+    padding: 68px 0 0;
+    max-width: 720px;
+  }
+
+  .head__title {
+    font-size: clamp(36px, 6vw, 62px);
+    margin: 16px 0 0;
+    letter-spacing: 0.03em;
+  }
+
+  .head__sub {
+    font-size: 16.5px;
+    line-height: 2;
+    color: var(--ink-2);
+    margin: 24px 0 0;
+  }
+
+  /* ============ 分组 ============ */
+  .group {
+    margin-top: 72px;
+  }
+
+  .group:first-of-type {
+    margin-top: 60px;
+  }
+
+  .group__label {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--moss);
+    margin: 0 0 26px;
+  }
+
+  .group__label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--line) 0 6px, transparent 6px 14px);
+    background-size: 14px 1px;
+    background-repeat: repeat-x;
+  }
+
+  /* ============ 卡片 ============ */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .work {
+    position: relative;
+    padding: 30px 32px 30px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(168deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.5));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 42px -34px rgba(34, 64, 42, 0.5);
+    transition:
+      transform 0.5s var(--ease),
+      box-shadow 0.5s var(--ease);
+  }
+
+  .work:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 28px 54px -34px rgba(34, 64, 42, 0.48),
+      0 0 48px -22px rgba(203, 232, 127, 0.6);
+  }
+
+  .work__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .work__date {
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    color: var(--moss);
+    background: rgba(201, 228, 168, 0.42);
+    border-radius: 999px;
+    padding: 3px 12px;
+  }
+
+  .work__org {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+  }
+
+  .work__title {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 2.6vw, 25px);
+    font-weight: 400;
+    color: var(--moss-deep);
+    margin: 16px 0 0;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .work__summary {
+    font-size: 14.5px;
+    line-height: 1.9;
+    color: var(--ink-2);
+    margin: 12px 0 0;
+  }
+
+  /* —— 当时的想法 —— */
+  .work__thought {
+    position: relative;
+    margin: 22px 0 0;
+    padding: 20px 22px 20px 26px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: rgba(232, 246, 171, 0.28);
+  }
+
+  .work__thought::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(to bottom, var(--sprout), var(--lake));
+  }
+
+  .work__thoughtLabel {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--moss);
+    margin-bottom: 10px;
+  }
+
+  .work__thoughtText {
+    font-family: var(--font-display);
+    font-size: 15.5px;
+    line-height: 2.05;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .work__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    list-style: none;
+    padding: 0;
+    margin: 22px 0 0;
+  }
+
+  .work__tags .tag {
+    font-size: 11.5px;
+    padding: 3px 11px;
+  }
+
+  @media (max-width: 900px) {
+    .cards {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .head {
+      padding-top: 40px;
+    }
+
+    .group {
+      margin-top: 52px;
+    }
+
+    .work {
+      padding: 24px 22px 26px;
+    }
+
+    .work__thought {
+      padding: 18px 18px 18px 22px;
+    }
+  }
+</style>

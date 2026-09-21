@@ -1,0 +1,451 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const cities = await getCollection('travel', ({ data }) => !data.draft);
+  const sorted = cities.sort((a, b) => a.data.order - b.data.order);
+
+  return sorted.map((city, i) => ({
+    params: { slug: city.id },
+    props: {
+      city,
+      prev: sorted[i - 1] ?? null,
+      next: sorted[i + 1] ?? null,
+    },
+  }));
+}
+
+const { city, prev, next } = Astro.props;
+const { data } = city;
+const { Content } = await render(city);
+
+const fmt = (d: Date) => `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`;
+---
+
+<BaseLayout title={`${data.city} · 旅行`} description={data.summary} active="travel">
+  <article class="shell page">
+    <a class="back" href="/travel/" data-reveal>← 回到所有城市</a>
+
+    <!-- ============ 城市标题 ============ -->
+    <header class="head">
+      <div class="head__text">
+        <span class="eyebrow" data-reveal>
+          {data.province ? `${data.province} · ${fmt(data.date)}` : fmt(data.date)}
+        </span>
+        <h1 class="display head__city" data-reveal>{data.city}</h1>
+        <p class="head__summary" data-reveal>{data.summary}</p>
+        {
+          data.tags.length > 0 && (
+            <ul class="head__tags" data-reveal>
+              {data.tags.map((tag) => (
+                <li class="tag">{tag}</li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+      <figure class="head__cover" data-reveal>
+        <span class="head__wash" aria-hidden="true"></span>
+        <img src={data.cover} alt={`${data.city}的封面`} />
+      </figure>
+    </header>
+
+    <!-- ============ 整体故事 ============ -->
+    {
+      city.body && city.body.trim().length > 0 && (
+        <section class="story" data-reveal>
+          <span class="story__mark" aria-hidden="true">“</span>
+          <div class="prose story__content">
+            <Content />
+          </div>
+        </section>
+      )
+    }
+
+    <!-- ============ 图片 + 感受 ============ -->
+    {
+      data.moments.length > 0 && (
+        <section class="moments">
+          <div class="moments__head" data-reveal>
+            <span class="eyebrow">Moments</span>
+            <h2 class="moments__title">
+              照片旁边的那些话
+            </h2>
+          </div>
+
+          {data.moments.map((moment, i) => (
+            <div
+              class:list={['moment', i % 2 === 1 && 'moment--flip']}
+              data-reveal
+            >
+              <figure class="moment__photo">
+                <img src={moment.image} alt={moment.caption || `${data.city}的照片`} loading="lazy" />
+                {moment.caption && <figcaption class="moment__caption">{moment.caption}</figcaption>}
+              </figure>
+              <div class="moment__note">
+                <span class="moment__index">{String(i + 1).padStart(2, '0')}</span>
+                <p class="moment__feeling">{moment.feeling}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      )
+    }
+
+    <!-- ============ 上下篇 ============ -->
+    <nav class="pager" aria-label="城市导航">
+      {
+        prev ? (
+          <a class="pager__item pager__item--prev" href={`/travel/${prev.id}/`}>
+            <span class="pager__label">上一座</span>
+            <span class="pager__city">{prev.data.city}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next ? (
+          <a class="pager__item pager__item--next" href={`/travel/${next.id}/`}>
+            <span class="pager__label">下一座</span>
+            <span class="pager__city">{next.data.city}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .back {
+    display: inline-block;
+    margin-top: 44px;
+    font-size: 13.5px;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+    transition: color 0.35s var(--ease);
+  }
+
+  .back:hover {
+    color: var(--moss-deep);
+  }
+
+  /* ============ 标题区 ============ */
+  .head {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 72px;
+    align-items: center;
+    padding: 46px 0 0;
+  }
+
+  .head__city {
+    font-size: clamp(46px, 8vw, 84px);
+    margin: 16px 0 0;
+    letter-spacing: 0.05em;
+  }
+
+  .head__summary {
+    font-family: var(--font-display);
+    font-size: clamp(17px, 2.2vw, 20px);
+    line-height: 1.9;
+    color: var(--moss);
+    margin: 22px 0 0;
+    max-width: 30ch;
+  }
+
+  .head__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    list-style: none;
+    padding: 0;
+    margin: 28px 0 0;
+  }
+
+  .head__cover {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 4 / 5;
+    isolation: isolate;
+  }
+
+  .head__wash {
+    position: absolute;
+    inset: -20px -24px -16px -20px;
+    z-index: -1;
+    border-radius: 46% 54% 48% 52% / 52% 46% 54% 48%;
+    background: linear-gradient(150deg, var(--sprout), var(--lake));
+    opacity: 0.46;
+    filter: blur(8px);
+    transform: rotate(4deg);
+  }
+
+  .head__cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 42% 58% 46% 54% / 50% 44% 56% 50%;
+    box-shadow: var(--shadow-soft);
+    background: var(--cream-2);
+  }
+
+  /* ============ 整体故事 ============ */
+  .story {
+    position: relative;
+    margin: 96px 0 0;
+    padding: 46px 52px 46px 74px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-soft);
+  }
+
+  .story__mark {
+    position: absolute;
+    left: 26px;
+    top: 22px;
+    font-family: var(--font-display);
+    font-size: 62px;
+    line-height: 1;
+    color: var(--mist);
+    opacity: 0.55;
+  }
+
+  .story__content {
+    font-size: 16.5px;
+  }
+
+  /* ============ 图片 + 感受 ============ */
+  .moments {
+    margin: 110px 0 0;
+  }
+
+  .moments__head {
+    margin-bottom: 60px;
+  }
+
+  .moments__title {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 400;
+    color: var(--moss-deep);
+    margin: 12px 0 0;
+    letter-spacing: 0.03em;
+  }
+
+  .moment {
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+    gap: 62px;
+    align-items: center;
+    margin-bottom: 88px;
+  }
+
+  .moment:last-child {
+    margin-bottom: 0;
+  }
+
+  .moment--flip .moment__photo {
+    order: 2;
+  }
+
+  .moment--flip .moment__note {
+    order: 1;
+  }
+
+  .moment__photo {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 4 / 3;
+    border-radius: 22px;
+    overflow: hidden;
+    background: var(--cream-2);
+    box-shadow: var(--shadow-soft);
+    transform: rotate(-1.4deg);
+    transition: transform 0.7s var(--ease);
+  }
+
+  .moment--flip .moment__photo {
+    transform: rotate(1.4deg);
+  }
+
+  .moment__photo:hover {
+    transform: rotate(0deg) scale(1.015);
+  }
+
+  .moment__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .moment__caption {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--moss-deep);
+    background: rgba(251, 249, 243, 0.9);
+    backdrop-filter: blur(6px);
+    border-radius: 999px;
+    padding: 5px 14px;
+  }
+
+  .moment__note {
+    position: relative;
+    padding-left: 26px;
+  }
+
+  .moment--flip .moment__note {
+    padding-left: 0;
+    padding-right: 26px;
+  }
+
+  .moment__note::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, var(--sprout), rgba(143, 199, 184, 0.35));
+  }
+
+  .moment--flip .moment__note::before {
+    left: auto;
+    right: 0;
+  }
+
+  .moment__index {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--mist);
+    margin-bottom: 12px;
+  }
+
+  .moment__feeling {
+    font-family: var(--font-display);
+    font-size: clamp(17px, 2vw, 20px);
+    line-height: 2.05;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ============ 上下篇 ============ */
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 120px;
+    padding-top: 40px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .pager__item {
+    display: grid;
+    gap: 6px;
+    padding: 24px 28px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line-soft);
+    background: rgba(255, 255, 255, 0.42);
+    transition:
+      transform 0.5s var(--ease),
+      border-color 0.5s var(--ease);
+  }
+
+  .pager__item:hover {
+    transform: translateY(-4px);
+    border-color: var(--mist-2);
+  }
+
+  .pager__item--next {
+    text-align: right;
+  }
+
+  .pager__label {
+    font-size: 11.5px;
+    letter-spacing: 0.2em;
+    color: var(--ink-3);
+  }
+
+  .pager__city {
+    font-family: var(--font-display);
+    font-size: 23px;
+    color: var(--moss-deep);
+    letter-spacing: 0.04em;
+  }
+
+  /* ============ 响应式 ============ */
+  @media (max-width: 980px) {
+    .head {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    .head__cover {
+      max-width: 340px;
+      aspect-ratio: 4 / 3;
+    }
+
+    .moment {
+      grid-template-columns: 1fr;
+      gap: 30px;
+      margin-bottom: 64px;
+    }
+
+    .moment--flip .moment__photo,
+    .moment--flip .moment__note {
+      order: initial;
+    }
+
+    .moment__photo,
+    .moment--flip .moment__photo {
+      transform: none;
+    }
+
+    .moment__note,
+    .moment--flip .moment__note {
+      padding-left: 22px;
+      padding-right: 0;
+    }
+
+    .moment__note::before,
+    .moment--flip .moment__note::before {
+      left: 0;
+      right: auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .story {
+      padding: 34px 26px 34px 46px;
+      margin-top: 64px;
+    }
+
+    .story__mark {
+      left: 16px;
+      font-size: 48px;
+    }
+
+    .moments {
+      margin-top: 72px;
+    }
+
+    .moments__head {
+      margin-bottom: 40px;
+    }
+
+    .pager {
+      grid-template-columns: 1fr;
+      margin-top: 80px;
+    }
+  }
+</style>

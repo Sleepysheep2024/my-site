@@ -1,0 +1,270 @@
+# ============================================================
+# 可视化编辑后台配置
+#
+# 现在走的是 Netlify + Git Gateway：
+#   仓库地址由 Netlify 那边绑定，这里不用填。
+#   上线后要在 Netlify 站点设置里打开 Identity 和 Git Gateway。
+#
+# 如果以后不用 Netlify 了，改成 GitHub 直连（需要自己配 OAuth）：
+#   backend:
+#     name: github
+#     repo: 你的用户名/仓库名
+#     branch: main
+# ============================================================
+
+backend:
+  name: git-gateway
+  branch: main
+
+# 图片上传后存到这里，页面上通过 /images/uploads/xxx.jpg 访问
+media_folder: public/images/uploads
+public_folder: /images/uploads
+
+locale: zh_Hans
+
+# 中文文件名照原样保留
+slug:
+  encoding: unicode
+  clean_accents: true
+
+collections:
+  # ---------------- 首页资料 ----------------
+  - name: profile
+    label: 首页资料
+    files:
+      - name: me
+        label: 我的个人资料
+        file: src/content/profile/me.md
+        fields:
+          - { name: name, label: 名字, widget: string }
+          - { name: tagline, label: 一句话介绍, widget: string }
+          - { name: avatar, label: 个人照, widget: image }
+          - { name: intro, label: 自我介绍, widget: text }
+          - { name: tags, label: 兴趣标签, widget: list, default: [] }
+          - name: photos
+            label: 人生照片（首页轮播）
+            label_singular: 一张照片
+            widget: list
+            summary: "{{fields.caption}}"
+            fields:
+              - { name: image, label: 照片, widget: image }
+              - { name: caption, label: 配一句话, widget: string, required: false }
+              - { name: place, label: 地点 / 时间, widget: string, required: false }
+          - name: about
+            label: 关于我（最喜欢的事物）
+            label_singular: 一条
+            widget: list
+            summary: "{{fields.label}}：{{fields.value}}"
+            fields:
+              - { name: label, label: 类别（如：最喜欢的菜）, widget: string }
+              - { name: value, label: 内容, widget: string }
+              - { name: note, label: 想补充的话, widget: string, required: false }
+              - name: icon
+                label: 图标
+                widget: select
+                default: star
+                options:
+                  - { label: 菜 / 食物, value: food }
+                  - { label: 水果, value: fruit }
+                  - { label: 颜色, value: color }
+                  - { label: 目标, value: goal }
+                  - { label: 饮料, value: drink }
+                  - { label: 季节, value: season }
+                  - { label: 音乐, value: music }
+                  - { label: 地点, value: place }
+                  - { label: 花, value: flower }
+                  - { label: 星星, value: star }
+                  - { label: 人物 / 年龄, value: user }
+                  - { label: 生日 / 蛋糕, value: cake }
+                  - { label: 身高 / 尺子, value: ruler }
+                  - { label: 心 / 理想型, value: heart }
+                  - { label: 心事 / 云, value: cloud }
+                  - { label: 秘密 / 锁, value: lock }
+                  - { label: 朋友, value: friends }
+                  - { label: 礼物, value: gift }
+                  - { label: 哭 / 泪滴, value: tear }
+                  - { label: 笑 / 笑脸, value: smile }
+                  - { label: 歌手 / 麦克风, value: mic }
+                  - { label: 钱 / 暴富, value: coin }
+              - { name: swatch, label: 色块（可填多个，用英文逗号分隔，如 #7fb069,#6fa8dc）, widget: string, required: false }
+          - name: contact
+            label: 联系方式
+            widget: list
+            label_singular: 一项
+            fields:
+              - { name: label, label: 名称（如：邮箱）, widget: string }
+              - { name: value, label: 内容, widget: string }
+          - { name: body, label: 补充说明（显示在页面底部）, widget: markdown, required: false }
+
+  # ---------------- 个人使用说明 ----------------
+  - name: resume
+    label: 个人使用说明
+    files:
+      - name: me
+        label: 我的使用说明
+        file: src/content/resume/me.md
+        fields:
+          - { name: name, label: 名字, widget: string }
+          - { name: headline, label: 一句话定位, widget: string, required: false }
+          - { name: intro, label: 开场说明, widget: text, required: false }
+          - name: basics
+            label: 基本资料
+            label_singular: 一项
+            widget: list
+            summary: "{{fields.label}}：{{fields.value}}"
+            fields:
+              - { name: label, label: 名称（如：年龄）, widget: string }
+              - { name: value, label: 内容, widget: string }
+          - name: chapters
+            label: 正文章节
+            label_singular: 一章
+            widget: list
+            summary: "{{fields.title}}"
+            fields:
+              - { name: title, label: 章节标题（如：关于我）, widget: string }
+              - { name: note, label: 章节小注释, widget: string, required: false }
+              - { name: items, label: 内容（一行一条）, widget: list, default: [] }
+          - { name: closing, label: 结尾一句, widget: string, required: false }
+          - { name: body, label: 备注（不显示在页面上）, widget: markdown, required: false }
+
+  # ---------------- 旅行 ----------------
+  - name: travel
+    label: 旅行
+    label_singular: 城市
+    folder: src/content/travel
+    create: true
+    identifier_field: city
+    summary: "{{city}} · {{summary}}"
+    sortable_fields: [order, date, city]
+    fields:
+      - { name: city, label: 城市名, widget: string }
+      - { name: province, label: 省份, widget: string, required: false }
+      - name: date
+        label: 出行时间
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - { name: cover, label: 封面图, widget: image }
+      - { name: summary, label: 一句话印象, widget: string }
+      - { name: tags, label: 标签, widget: list, default: [] }
+      - { name: order, label: 排序（数字越小越靠前）, widget: number, default: 999, value_type: int }
+      - { name: draft, label: 存为草稿（不显示在网站上）, widget: boolean, default: false }
+      - name: moments
+        label: 图片与感受
+        label_singular: 一个瞬间
+        widget: list
+        summary: "{{fields.caption}}"
+        fields:
+          - { name: image, label: 图片, widget: image }
+          - { name: caption, label: 图片小标题, widget: string, required: false }
+          - { name: feeling, label: 我的感受, widget: text }
+      - { name: body, label: 整体故事, widget: markdown, required: false }
+
+  # ---------------- 阅读 ----------------
+  - name: reading
+    label: 阅读
+    label_singular: 一本书
+    folder: src/content/reading
+    create: true
+    identifier_field: title
+    summary: "{{category}} · 《{{title}}》"
+    sortable_fields: [category, date, title]
+    fields:
+      - { name: title, label: 书名, widget: string }
+      - { name: author, label: 作者, widget: string, required: false }
+      - { name: cover, label: 封面图（建议竖版 3:4）, widget: image }
+      - name: category
+        label: 分类（决定它出现在左侧哪一栏）
+        widget: select
+        default: 文学
+        options: [文学, 小说, 学习, 其他]
+      - name: status
+        label: 阅读状态
+        widget: select
+        default: 读完
+        options: [想读, 在读, 读完]
+      - { name: rating, label: 评分（0-5）, widget: number, default: 0, value_type: int, min: 0, max: 5 }
+      - name: date
+        label: 日期（读完 / 开始读）
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - { name: summary, label: 一句话感受, widget: string, required: false }
+      - { name: tags, label: 标签, widget: list, default: [] }
+      - name: quotes
+        label: 摘抄与批注
+        label_singular: 一条
+        widget: list
+        summary: "{{fields.text}}"
+        fields:
+          - { name: text, label: 原文摘抄, widget: text }
+          - { name: page, label: 页码 / 位置, widget: string, required: false }
+          - { name: note, label: 我的批注, widget: text, required: false }
+      - { name: draft, label: 存为草稿（不显示在网站上）, widget: boolean, default: false }
+      - { name: body, label: 读后感, widget: markdown, required: false }
+
+  # ---------------- 生活 ----------------
+  - name: life
+    label: 生活
+    label_singular: 一次出行
+    folder: src/content/life
+    create: true
+    identifier_field: title
+    summary: "{{place}} · {{title}}"
+    sortable_fields: [date, place, title]
+    fields:
+      - { name: title, label: 标题, widget: string }
+      - name: date
+        label: 日期
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - { name: place, label: 地点（显示在地图上）, widget: string, required: false }
+      - { name: address, label: 详细地址, widget: string, required: false }
+      - { name: lat, label: 纬度（地图定位用，如 30.6012）, widget: number, required: false, value_type: float }
+      - { name: lng, label: 经度（地图定位用，如 119.8826）, widget: number, required: false, value_type: float }
+      - { name: cover, label: 封面图, widget: image }
+      - { name: people, label: 同行的人, widget: list, default: [] }
+      - { name: summary, label: 一句话记录, widget: string, required: false }
+      - name: photos
+        label: 那天的照片
+        label_singular: 一张
+        widget: list
+        summary: "{{fields.caption}}"
+        fields:
+          - { name: image, label: 图片, widget: image }
+          - { name: caption, label: 图片说明, widget: string, required: false }
+      - { name: draft, label: 存为草稿（不显示在网站上）, widget: boolean, default: false }
+      - { name: body, label: 那天的事, widget: markdown, required: false }
+
+  # ---------------- 生涯 ----------------
+  - name: career
+    label: 生涯
+    label_singular: 一件事
+    folder: src/content/career
+    create: true
+    identifier_field: title
+    summary: "{{category}} · {{title}}"
+    sortable_fields: [category, date, title]
+    fields:
+      - { name: title, label: 标题, widget: string }
+      - { name: org, label: 组织 / 单位, widget: string, required: false }
+      - name: date
+        label: 时间
+        widget: datetime
+        date_format: "YYYY-MM-DD"
+        time_format: false
+        format: "YYYY-MM-DD"
+      - name: category
+        label: 类别（决定它出现在哪一组）
+        widget: select
+        default: 实习
+        options: [实习, 班干, 团委学习, 比赛, 其他]
+      - { name: summary, label: 一句话概括, widget: string, required: false }
+      - { name: thought, label: 当时的想法, widget: text, required: false }
+      - { name: tags, label: 标签, widget: list, default: [] }
+      - { name: draft, label: 存为草稿（不显示在网站上）, widget: boolean, default: false }
+      - { name: body, label: 补充说明（显示在想法下面）, widget: markdown, required: false }

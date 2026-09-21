@@ -1,0 +1,393 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const entry = await getEntry('resume', 'me');
+if (!entry) throw new Error('缺少 src/content/resume/me.md');
+const r = entry.data;
+---
+
+<BaseLayout title={`${r.name} · 个人使用说明`} description={`${r.name}的个人使用说明`}>
+  <section class="shell page wrap">
+    <div class="bar">
+      <a class="bar__back" href="/">← 回到首页</a>
+      <button class="bar__print" type="button" data-print>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3.6v11.2" />
+          <path d="M7.6 10.6 12 15l4.4-4.4" />
+          <path d="M4.4 18.6h15.2" />
+        </svg>
+        保存为 PDF
+      </button>
+    </div>
+
+    <article class="sheet">
+      <header class="head">
+        <span class="head__eyebrow">个人使用说明</span>
+        <h1 class="head__name">{r.name}</h1>
+        {r.headline && <p class="head__headline">{r.headline}</p>}
+        {r.intro && <p class="head__intro">{r.intro}</p>}
+      </header>
+
+      {
+        r.basics.length > 0 && (
+          <section class="block">
+            <h2 class="block__title">基本资料</h2>
+            <ul class="basics">
+              {r.basics.map((b) => (
+                <li class="basics__item">
+                  <span class="basics__label">{b.label}</span>
+                  <span class="basics__value">{b.value}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        r.chapters.map((c, i) => (
+          <section class="block">
+            <h2 class="block__title">
+              <span class="block__num">{String(i + 1).padStart(2, '0')}</span>
+              {c.title}
+              {c.note && <span class="block__note">{c.note}</span>}
+            </h2>
+            {c.items.length > 0 && (
+              <ul class="notes">
+                {c.items.map((item) => (
+                  <li class="notes__item">{item}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))
+      }
+
+      {r.closing && <p class="closing">{r.closing}</p>}
+    </article>
+
+    <p class="hint">
+      点右上角「保存为 PDF」，在打印窗口里把目标改成「另存为 PDF」就可以了。纸张选 A4、边距选默认即可。
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+</script>
+
+<style>
+  .wrap {
+    padding-top: 54px;
+    padding-bottom: 100px;
+  }
+
+  /* —— 工具栏（不会打印出来）—— */
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 800px;
+    margin: 0 auto 26px;
+  }
+
+  .bar__back {
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--ink-2);
+    transition: color 0.35s var(--ease);
+  }
+
+  .bar__back:hover {
+    color: var(--moss-deep);
+  }
+
+  .bar__print {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14.5px;
+    letter-spacing: 0.06em;
+    color: var(--moss-deep);
+    background: linear-gradient(120deg, rgba(203, 232, 127, 0.95), rgba(143, 216, 196, 0.85));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 16px 32px -22px rgba(34, 64, 42, 0.6);
+    transition:
+      transform 0.45s var(--ease),
+      box-shadow 0.45s var(--ease);
+  }
+
+  .bar__print svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bar__print:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 22px 40px -22px rgba(34, 64, 42, 0.55),
+      0 0 46px -16px rgba(203, 232, 127, 0.9);
+  }
+
+  /* —— 纸张 —— */
+  .sheet {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 56px 58px 52px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.96);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 1) inset,
+      0 34px 70px -46px rgba(34, 64, 42, 0.6);
+  }
+
+  .head {
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .head__eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    color: var(--moss);
+  }
+
+  .head__name {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 42px);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: var(--moss-deep);
+    margin: 10px 0 0;
+  }
+
+  .head__headline {
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    color: var(--moss);
+    margin: 12px 0 0;
+  }
+
+  .head__intro {
+    font-size: 14.5px;
+    line-height: 2;
+    color: var(--ink-2);
+    margin: 16px 0 0;
+  }
+
+  /* —— 分区 —— */
+  .block {
+    margin-top: 34px;
+  }
+
+  .block__title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    color: var(--moss-deep);
+    margin: 0 0 16px;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .block__title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.35em;
+    width: 4px;
+    height: 15px;
+    border-radius: 2px;
+    background: linear-gradient(var(--leaf-bright), var(--lake));
+  }
+
+  .block__num {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--mist);
+  }
+
+  .block__note {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+
+  /* —— 基本资料 —— */
+  .basics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 18px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .basics__item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 9px;
+    border-bottom: 1px dashed var(--line);
+  }
+
+  .basics__label {
+    flex-shrink: 0;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+  }
+
+  .basics__value {
+    font-family: var(--font-display);
+    font-size: 15.5px;
+    letter-spacing: 0.03em;
+    color: var(--moss-deep);
+  }
+
+  /* —— 条目 —— */
+  .notes {
+    display: grid;
+    gap: 9px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .notes__item {
+    position: relative;
+    padding-left: 19px;
+    font-size: 14.5px;
+    line-height: 1.95;
+    color: var(--ink-2);
+  }
+
+  .notes__item::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0.78em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mist);
+  }
+
+  .closing {
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    color: var(--moss);
+    text-align: center;
+    margin: 40px 0 0;
+    padding-top: 26px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .hint {
+    max-width: 800px;
+    margin: 22px auto 0;
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink-3);
+    text-align: center;
+  }
+
+  /* ================= 打印 / 存 PDF ================= */
+  @media print {
+    .bar,
+    .hint {
+      display: none !important;
+    }
+
+    .wrap {
+      padding: 0 !important;
+    }
+
+    .sheet {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    .head {
+      border-bottom-color: #d5d5d5;
+    }
+
+    .head__eyebrow,
+    .head__headline,
+    .closing {
+      color: #3f5a44;
+    }
+
+    .head__name,
+    .block__title,
+    .basics__value {
+      color: #111;
+    }
+
+    .head__intro,
+    .notes__item,
+    .basics__label,
+    .block__note {
+      color: #333;
+    }
+
+    .block,
+    .basics__item,
+    .notes__item {
+      break-inside: avoid;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .wrap {
+      padding-top: 34px;
+    }
+
+    .sheet {
+      padding: 32px 24px 30px;
+      border-radius: 18px;
+    }
+
+    .block {
+      margin-top: 28px;
+    }
+
+    .basics {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
