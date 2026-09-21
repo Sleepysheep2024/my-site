@@ -10,15 +10,15 @@ tags:
   - 听歌
 photos:
   - image: /images/uploads/img_20260907_190011.jpg
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20friends%20laughing%20at%20a%20night%20market%2C%20warm%20string%20lights%20bokeh%2C%20soft%20focus%2C%20dreamy%20green%20tint%2C%20analog%20film%20grain&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20mountain%20trail%20through%20lush%20green%20forest%2C%20dappled%20sunlight%20through%20leaves%2C%20dreamy%20soft%20focus%2C%20analog%20film&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20young%20woman%20reading%20a%20book%20by%20a%20window%20with%20plants%2C%20soft%20daylight%2C%20dreamy%20green%20and%20cream%20tones%2C%20analog%20film&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20an%20old%20town%20alley%20with%20green%20vines%20on%20walls%2C%20soft%20afternoon%20light%2C%20dreamy%20muted%20green%20tones%2C%20analog%20film%20grain&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20field%20of%20white%20wildflowers%20in%20soft%20green%20grass%2C%20hazy%20warm%20sunlight%2C%20dreamy%20impressionist%20feel%2C%20analog%20film%20grain&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20city%20rooftop%20at%20dusk%20with%20glowing%20windows%20and%20green%20trees%20below%2C%20dreamy%20soft%20focus%2C%20analog%20film%20grain&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20cozy%20cafe%20table%20with%20iced%20coffee%20and%20an%20open%20book%2C%20warm%20window%20light%2C%20dreamy%20green%20tones%2C%20analog%20film&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20a%20young%20woman%20in%20a%20winter%20coat%20on%20a%20snowy%20street%2C%20soft%20pale%20light%2C%20dreamy%20muted%20tones%2C%20analog%20film%20grain&image_size=portrait_4_3
-  - image: https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=candid%20film%20photograph%20of%20concert%20stage%20lights%20and%20a%20crowd%20silhouette%2C%20warm%20glowing%20bokeh%2C%20dreamy%20soft%20focus%2C%20analog%20film%20grain&image_size=portrait_4_3
+  - image: /images/uploads/retouch_2026083118494163.jpg
+  - image: /images/uploads/retouch_2026020317593500.jpg
+  - image: /images/uploads/retouch_2026072713065762.jpg
+  - image: /images/uploads/retouch_2026012414554942.jpg
+  - image: /images/uploads/retouch_2025062722501175.jpg
+  - image: /images/uploads/retouch_2025071415551773.jpg
+  - image: /images/uploads/retouch_2026031313200934.jpg
+  - image: /images/uploads/retouch_2025100814231459.jpg
+  - image: /images/uploads/retouch_2026042615392687.jpg
 about:
   - label: 年龄
     value: "20"
