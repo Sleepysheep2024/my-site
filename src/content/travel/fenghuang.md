@@ -1,7 +1,7 @@
 ---
 city: 凤凰古城
 province: 湖南
-date: 2024-10-06
+date: 2024-07-15
 cover: /images/uploads/retouch_2025071611364942.jpg
 summary: 吵吵闹闹地穿过许多条街道
 tags:
